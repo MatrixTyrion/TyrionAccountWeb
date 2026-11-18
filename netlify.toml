@@ -1,0 +1,4 @@
+# Netlify build settings for the encrypted vault.
+# Only ciphertext HTML files are committed to this repo (see .gitignore).
+[build]
+  publish = "."

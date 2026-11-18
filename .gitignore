@@ -1,0 +1,6 @@
+vault.md
+vault.yaml
+vault.roundtrip.yaml
+*.enc
+__pycache__/
+*.pyc

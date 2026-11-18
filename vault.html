@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账户库</title>
+<style>
+:root{--bg:#f7f8fa;--card:#ffffff;--text:#1f2328;--muted:#656d76;--border:#d8dee4;--accent:#0969da;--danger:#cf222e;--warn:#fff8c5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+#lock{display:flex;align-items:center;justify-content:center;min-height:60vh}
+#lock .card{width:100%;max-width:420px}
+label{display:block;font-size:13px;margin-bottom:6px}
+input[type=password],input[type=search],select{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font:inherit}
+button{padding:8px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font:inherit;cursor:pointer}
+button.ghost{background:#fff;color:var(--accent)}
+button.mini{padding:2px 8px;font-size:12px;background:#fff;color:var(--accent);border-color:var(--border)}
+button:hover{opacity:.88}
+.error{color:var(--danger);min-height:20px;font-size:13px;margin-top:8px}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.bar input[type=search]{flex:1;min-width:220px}
+.bar select{width:auto;min-width:130px}
+.table-wrap{overflow-x:auto}
+@media(max-width:640px){
+.wrap{padding:16px 10px 40px}
+.bar input[type=search]{min-width:100%}
+.bar select{flex:1;min-width:calc(50% - 5px)}
+th,td{padding:7px 8px;white-space:nowrap}
+}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;background:#f6f8fa}
+.pw{font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}
+td .mini{margin-left:4px}
+a{color:var(--accent);text-decoration:none}
+.note{color:var(--muted);font-size:12px;margin-top:14px}
+#toast{position:absolute;right:20px;top:20px;background:#1f2328;color:#fff;padding:8px 14px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;font-size:13px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="wrap">
+<div id="lock">
+  <div class="card">
+    <h1>账户库</h1>
+    <div class="sub">本页只包含密文，解密在你的浏览器中本地完成。</div>
+    <label for="password">主密码</label>
+    <input id="password" type="password" autocomplete="off" autofocus>
+    <div class="error" id="error"></div>
+    <button id="unlock" style="margin-top:10px">解锁</button>
+    <div class="note">连续 10 分钟无操作会自动锁定。忘记主密码无法恢复。</div>
+  </div>
+</div>
+<div id="app" style="display:none">
+  <h1 id="title">账户库</h1>
+  <div class="sub" id="count"></div>
+  <div class="card">
+    <div class="bar">
+      <input id="search" type="search" placeholder="搜索服务、账号、人员、网址或备注">
+      <select id="category"><option value="">全部分类</option></select>
+      <select id="service"><option value="">全部服务</option></select>
+      <select id="owner"><option value="">全部人员</option></select>
+      <button class="ghost" id="locknow">锁定</button>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>分类</th><th>服务</th><th>人员</th><th>账号</th><th>密码 / 密钥</th><th>网址</th><th>备注</th><th>更新</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+</div>
+<script id="vault-data" type="application/json">{"v":1,"kdf":{"name":"PBKDF2","hash":"SHA-256","iterations":210000,"salt":"AxdkMg5jPIFQQpSjqeqxUA=="},"cipher":{"name":"AES-GCM","iv":"WfmvShKkzz7xsDpV"},"data":"ok4Bvas59gzTga53XVksxccNdcuj8IpbE+oAB78+C4FSWGzvi4RPhNgmZth/xSCs7KegShEKgvPAuLep5Ny53lpYcTjyUkbVeiq5+0OD1PAidtcBJGnBhUkULoD0HNtQFfUHVmXU/WjHwpBxHGMbMmUoZ0ZS7Ehy2vNsOS4FmhhY454WW9/7/CJS/ssHuUl3A9pE8NmurjjY2ZpWg+SGjberU1Qtdt0Mb56DAnd/lHmDknoDHooRQNjcPITv6cyL+rxJATB4kDJqYOsEULj8Z33qWBro/F06PFKZ/ZARLRJ8gaU7bLyDC3oB2Y8D3EvBuwU+7gxdDr0CrqHfNRQ/9iXd1EPxZNi+JuIdb/NJqXm3TQpq0tm3gQ62GH1WcBqecvxocBBesQmBdO7MFdYhMMuegIZEj0NXveJd4vu5XSArr6M6sF5SliKhIFViFWFUhHrX3XwTRcufG7Uwwl6ko4lGzMTJQTtjFGWZs9McKGwblpnF+WddoyNQLIo/itC6Q9sobBuUu6BpMtu5KKfxZq5O1SBMaCo73MOs2kZ6qf8BVMkjWmCyPcDD/PJCUDzmyl6YR6qQ9ExZw4Pk6HNnyNNY8Y6YXcLbsC4FmfVB6tgkBqDjUU7nyemC5rCE/pFwBkRYN9Iykepo/YWWIxkCjdM87pF8qAraMOzsTmHY44h35vodMSivIcfACih3GuT+HgNrP3++6w7opsiL3+I7Vk3I4N+9S9vfOlhEeR0Arsz7xLZdrqrDF0i3MpTKGUwrwdZKVG/PdlorSV0MpnXq4lQQB/v1hhOO/j01PYV2ieduh2jxdSnYRFJXv+BDwrDjsbyTer8E0Jm8Oon54gSpAbfQoh6ezhStUG4rcxn8UgKK3OLkKeUUytrQFJcxiuRLwCJ+0XACw8mh/ptJmPaNdu28HsylD2jhUmb7ykroRFyG32drgk/2M4Y8cmhmR+hEVHyvVjiKOCjS72Btfec+VcxQtee6ctizB/x8AoyBtFXhFskH1oddMGFIJcvq5AvJY1DjrbMPc40SxL4EJSpR96GdeJ2f7tsfT45kTLMAlaMSyZiTcCcJ+OONvakIjMW9OH6v6Sr3YufW39DNXEA+D8M2fDoCNDkhS7NduyFMUyFrV0cef14du2c="}</script>
+<script>
+const envelope = JSON.parse(document.getElementById('vault-data').textContent);
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+let records = [];
+let idleTimer = null;
+
+function fromB64(s){const b=atob(s);const a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1400)}
+function showError(msg){document.getElementById('error').textContent=msg}
+
+async function deriveKey(password){
+  const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    {name:'PBKDF2', hash:'SHA-256', salt:fromB64(envelope.kdf.salt), iterations:envelope.kdf.iterations},
+    base, 256);
+  return crypto.subtle.importKey('raw', bits, {name:'AES-GCM'}, false, ['decrypt']);
+}
+
+async function unlock(){
+  showError('');
+  const input = document.getElementById('password');
+  const password = input.value;
+  if(!password){showError('请输入主密码');return}
+  if(!window.crypto || !crypto.subtle){showError('当前浏览器不支持本地解密，请使用新版 Chrome / Edge / Firefox');return}
+  try{
+    const key = await deriveKey(password);
+    const plain = await crypto.subtle.decrypt(
+      {name:'AES-GCM', iv:fromB64(envelope.cipher.iv), additionalData:enc.encode('vault-v1')},
+      key, fromB64(envelope.data));
+    const obj = JSON.parse(dec.decode(plain));
+    records = Array.isArray(obj.records) ? obj.records : [];
+    document.getElementById('title').textContent = (obj.vault && obj.vault.title) || '账户库';
+    fillFilters();
+    document.getElementById('lock').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    input.value = '';
+    render();
+    resetIdle();
+  }catch(e){
+    showError('解锁失败：主密码错误，或数据已被修改');
+  }
+}
+
+function fillFilters(){
+  const cats = [...new Set(records.map(r=>r.category||'未分类'))].sort();
+  document.getElementById('category').innerHTML = '<option value="">全部分类</option>' + cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  const services = [...new Set(records.map(r=>r.service||'未填写'))].sort();
+  document.getElementById('service').innerHTML = '<option value="">全部服务</option>' + services.map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join('');
+  const owners = [...new Set(records.map(r=>r.owner||'未指定'))].sort();
+  document.getElementById('owner').innerHTML = '<option value="">全部人员</option>' + owners.map(o=>'<option value="'+esc(o)+'">'+esc(o)+'</option>').join('');
+}
+
+function render(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const cat = document.getElementById('category').value;
+  const svc = document.getElementById('service').value;
+  const owner = document.getElementById('owner').value;
+  const rows = records.filter(r=>{
+    if(cat && (r.category||'未分类') !== cat) return false;
+    if(svc && (r.service||'未填写') !== svc) return false;
+    if(owner && (r.owner||'未指定') !== owner) return false;
+    if(!q) return true;
+    return [r.service,r.category,r.owner,r.username,r.url,r.notes].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('count').textContent = '共 ' + records.length + ' 条记录，当前显示 ' + rows.length + ' 条';
+  document.getElementById('rows').innerHTML = rows.map(r=>{
+    const url = r.url ? '<a href="'+esc(r.url)+'" target="_blank" rel="noreferrer">'+esc(r.url)+'</a>' : '';
+    return '<tr>'
+      + '<td>'+esc(r.category||'未分类')+'</td>'
+      + '<td>'+esc(r.service)+'</td>'
+      + '<td>'+esc(r.owner||'未指定')+'</td>'
+      + '<td>'+esc(r.username)+'</td>'
+      + '<td><span class="pw">'+esc(r.password)+'</span>'
+      + '<button class="mini" onclick="copyPw(this)">复制</button></td>'
+      + '<td>'+url+'</td>'
+      + '<td>'+esc(r.notes)+'</td>'
+      + '<td>'+esc(r.updated)+'</td>'
+      + '</tr>';
+  }).join('');
+}
+
+async function copyPw(btn){
+  const text = btn.closest('td').querySelector('.pw').textContent;
+  try{await navigator.clipboard.writeText(text)}
+  catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+  toast('已复制到剪贴板');
+}
+function lock(){
+  records = [];
+  document.getElementById('app').style.display='none';
+  document.getElementById('lock').style.display='flex';
+  document.getElementById('password').value='';
+  document.getElementById('rows').innerHTML='';
+  clearTimeout(idleTimer);
+}
+function resetIdle(){clearTimeout(idleTimer);idleTimer=setTimeout(lock,10*60*1000)}
+
+document.getElementById('unlock').addEventListener('click', unlock);
+document.getElementById('password').addEventListener('keydown', e=>{if(e.key==='Enter')unlock()});
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('category').addEventListener('change', render);
+document.getElementById('service').addEventListener('change', render);
+document.getElementById('owner').addEventListener('change', render);
+document.getElementById('locknow').addEventListener('click', lock);
+['click','keydown','mousemove'].forEach(ev=>document.addEventListener(ev,()=>{if(idleTimer)resetIdle()}));
+</script>
+</body>
+</html>
